@@ -9,7 +9,7 @@ namespace AiLlama32.Api.Configuracao
     {
         public static void RegistrarRateLimit(this IServiceCollection services, AppSettingsDto appSettings)
         {
-            RateLimitDto configuracao = appSettings.RateLimitDto;
+            RateLimitDto configuracao = appSettings.RateLimit;
 
             if (!configuracao.Habilitado)
                 return;

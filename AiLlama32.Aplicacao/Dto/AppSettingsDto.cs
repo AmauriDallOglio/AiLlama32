@@ -2,10 +2,10 @@
 {
     public class AppSettingsDto
     {
-        public LoggingDto LoggingDto { get; set; } = new LoggingDto();
-        public ConfiguracaoOllamaDto ConfiguracaoOllamaDto { get; set; } = new ConfiguracaoOllamaDto();
-        public RateLimitDto RateLimitDto { get; set; } = new RateLimitDto();
-        public SegurancaDto SegurancaDto { get; set; } = new SegurancaDto();
+        public LoggingDto Logging { get; set; } = new LoggingDto();
+        public ConfiguracaoOllamaDto ConfiguracaoOllama { get; set; } = new ConfiguracaoOllamaDto();
+        public RateLimitDto RateLimit { get; set; } = new RateLimitDto();
+        public SegurancaDto Seguranca { get; set; } = new SegurancaDto();
     }
 
     public class LoggingDto
@@ -23,25 +23,25 @@
     public class RateLimitDto
     {
         public bool Habilitado { get; set; } = true;
-        public int RequisicoesPermitidas { get; set; } = 100;
-        public int JanelaEmSegundos { get; set; } = 60;
+        public int RequisicoesPermitidas { get; set; } = 0;
+        public int JanelaEmSegundos { get; set; } = 0;
         public int TamanhoFila { get; set; }
     }
 
     public class ConfiguracaoOllamaDto
     {
-        public string UrlServidor { get; set; } = "http://localhost:11434";
-        public string ModeloPadrao { get; set; } = "llama3.2:latest";
+        public string UrlServidor { get; set; } = string.Empty;
+        public string ModeloPadrao { get; set; } = string.Empty;
         public bool UsarOllamaReal { get; set; } = false;
-        public int QuantidadeMaximaTokens { get; set; } = 1024;
-        public decimal TemperaturaPadrao { get; set; } = 0.7m;
-        public string InstrucaoSistemaPadrao { get; set; } = "Responda em portugues, com objetividade, usando o contexto da sessao.";
-        public string InstrucaoAssuntoGeral { get; set; } = "Responda em portugues de forma clara, objetiva e util.";
-        public string MensagemSessaoInicial { get; set; } = "Sessao inicial preparada para documentacao.";
-        public string TipoConsultaAssuntoGeral { get; set; } = "Assunto geral direto no llama3.2:latest";
-        public string PacoteIntegracao { get; set; } = "OllamaSharp";
-        public string CaminhoArquivoSessoes { get; set; } = "Dados/sessoes-ollama.json";
-        public string Observacao { get; set; } = "Configure o endpoint do Ollama e o modelo no Azure App Settings quando usar integracao real.";
+        public int QuantidadeMaximaTokens { get; set; } = 0;
+        public decimal TemperaturaPadrao { get; set; } = 0;
+        public string InstrucaoSistemaPadrao { get; set; } = string.Empty;
+        public string InstrucaoAssuntoGeral { get; set; } = string.Empty;
+        public string MensagemSessaoInicial { get; set; } = string.Empty;
+        public string TipoConsultaAssuntoGeral { get; set; } = string.Empty;
+        public string PacoteIntegracao { get; set; } = string.Empty;
+        public string CaminhoArquivoSessoes { get; set; } = string.Empty;
+        public string Observacao { get; set; } = string.Empty;
     }
 
     public class SegurancaDto

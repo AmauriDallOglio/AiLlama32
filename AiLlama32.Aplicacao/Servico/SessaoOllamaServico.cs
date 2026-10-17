@@ -2,36 +2,37 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using OllamaSharp;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 
 
 namespace AiLlama32.Aplicacao.Servico
 {
+
+
     public class SessaoOllamaServico
     {
-        private readonly IOptions<ConfiguracaoOllamaDto> opcoesOllama;
+        private readonly IOptions<AppSettingsDto> opcoesOllama;
         private readonly List<SessaoOllamaDto> sessoes;
         private readonly string caminhoArquivoSessoes;
         private readonly JsonSerializerOptions opcoesJson = new(JsonSerializerDefaults.Web)
         {
             WriteIndented = true
         };
+        ConfiguracaoOllamaDto configuracaoOllamaDto = new ConfiguracaoOllamaDto();
 
-        public SessaoOllamaServico(IOptions<ConfiguracaoOllamaDto> opcoesOllama, IWebHostEnvironment ambiente)
+        public SessaoOllamaServico(  IOptions<AppSettingsDto> opcoesOllama,  IWebHostEnvironment ambiente)
         {
             this.opcoesOllama = opcoesOllama;
             caminhoArquivoSessoes = ResolverCaminhoArquivoSessoes(ambiente.ContentRootPath);
             sessoes = CarregarSessoes();
+            configuracaoOllamaDto = opcoesOllama.Value.ConfiguracaoOllama;
         }
+
 
         private List<SessaoOllamaDto> CriarSessoesIniciais()
         {
-            var configuracao = opcoesOllama.Value;
+ 
             var modeloPadrao = ObterModeloPadrao();
 
             return
@@ -42,12 +43,12 @@ namespace AiLlama32.Aplicacao.Servico
                 Nome = "Assistente de documentacao",
                 Descricao = "Sessao para recuperar informacoes de documentacao interna.",
                 Modelo = modeloPadrao,
-                InstrucaoSistema = configuracao.InstrucaoSistemaPadrao,
-                Temperatura = configuracao.TemperaturaPadrao,
+                InstrucaoSistema = configuracaoOllamaDto.InstrucaoSistemaPadrao,
+                Temperatura = configuracaoOllamaDto.TemperaturaPadrao,
                 Tags = ["documentacao", "suporte"],
                 Historico =
                 [
-                    new MensagemSessaoOllama { Papel = "sistema", Conteudo = configuracao.MensagemSessaoInicial }
+                    new MensagemSessaoOllama { Papel = "sistema", Conteudo = configuracaoOllamaDto.MensagemSessaoInicial }
                 ],
                 Ativo = true
             },
@@ -57,8 +58,8 @@ namespace AiLlama32.Aplicacao.Servico
                 Nome = "Assistente tecnico",
                 Descricao = "Sessao para perguntas tecnicas sobre APIs.",
                 Modelo = modeloPadrao,
-                InstrucaoSistema = configuracao.InstrucaoSistemaPadrao,
-                Temperatura = configuracao.TemperaturaPadrao,
+                InstrucaoSistema = configuracaoOllamaDto.InstrucaoSistemaPadrao,
+                Temperatura = configuracaoOllamaDto.TemperaturaPadrao,
                 Tags = ["api", "tecnico"],
                 Ativo = true
             }
@@ -229,7 +230,7 @@ namespace AiLlama32.Aplicacao.Servico
             catch (Exception excecao)
             {
                 return CriarFalha<object>(
-                    $"Nao foi possivel consultar o llama3.2:latest no Ollama para a sessao '{sessao.Nome}'. Verifique se o servidor '{opcoesOllama.Value.UrlServidor}' esta ativo e se o modelo '{ObterModeloPadrao()}' foi baixado. Detalhe: {excecao.Message}",
+                    $"Nao foi possivel consultar o llama3.2:latest no Ollama para a sessao '{sessao.Nome}'. Verifique se o servidor '{configuracaoOllamaDto.UrlServidor}' esta ativo e se o modelo '{ObterModeloPadrao()}' foi baixado. Detalhe: {excecao.Message}",
                     usouOllamaReal: true);
             }
 
@@ -313,7 +314,7 @@ namespace AiLlama32.Aplicacao.Servico
                 return CriarFalha<object>("A pergunta e obrigatoria para o assunto geral.");
             }
 
-            var configuracao = opcoesOllama.Value;
+            var configuracao = opcoesOllama.Value.ConfiguracaoOllama;
             var modeloDireto = ObterModeloPadrao();
 
             try
@@ -339,7 +340,7 @@ namespace AiLlama32.Aplicacao.Servico
 
         public ResultadoOllamaDto<object> ObterStatusIntegracao()
         {
-            var configuracao = opcoesOllama.Value;
+            var configuracao = configuracaoOllamaDto;
 
             return CriarSucesso<object>(new
             {
@@ -355,7 +356,7 @@ namespace AiLlama32.Aplicacao.Servico
 
         private async Task<string> PerguntarOllamaReal(SessaoOllamaDto sessao, string pergunta)
         {
-            var configuracao = opcoesOllama.Value;
+            var configuracao = configuracaoOllamaDto;
             var modelo = ObterModeloPadrao();
             var cliente = new OllamaApiClient(new Uri(configuracao.UrlServidor), modelo);
             var chat = new Chat(cliente, sessao.InstrucaoSistema);
@@ -371,7 +372,7 @@ namespace AiLlama32.Aplicacao.Servico
 
         private async Task<string> PerguntarLlama32Real(string modelo, string pergunta)
         {
-            var configuracao = opcoesOllama.Value;
+            var configuracao = configuracaoOllamaDto;
             var cliente = new OllamaApiClient(new Uri(configuracao.UrlServidor), modelo);
             var chat = new Chat(cliente, configuracao.InstrucaoAssuntoGeral);
             var resposta = new StringBuilder();
@@ -386,7 +387,7 @@ namespace AiLlama32.Aplicacao.Servico
 
         private string ObterModeloPadrao()
         {
-            var modeloConfigurado = opcoesOllama.Value.ModeloPadrao;
+            var modeloConfigurado = configuracaoOllamaDto.ModeloPadrao;
             return string.IsNullOrWhiteSpace(modeloConfigurado) ? "llama3.2:latest" : modeloConfigurado;
         }
 
@@ -429,7 +430,7 @@ namespace AiLlama32.Aplicacao.Servico
 
         private string ResolverCaminhoArquivoSessoes(string caminhoBase)
         {
-            var caminhoConfigurado = opcoesOllama.Value.CaminhoArquivoSessoes;
+            var caminhoConfigurado = configuracaoOllamaDto.CaminhoArquivoSessoes;
             var caminho = string.IsNullOrWhiteSpace(caminhoConfigurado)
                 ? "Dados/sessoes-ollama.json"
                 : caminhoConfigurado;
@@ -460,7 +461,7 @@ namespace AiLlama32.Aplicacao.Servico
             {
                 Sucesso = true,
                 Mensagem = mensagem,
-                UsouOllamaReal = usouOllamaReal ?? opcoesOllama.Value.UsarOllamaReal,
+                UsouOllamaReal = usouOllamaReal ?? configuracaoOllamaDto.UsarOllamaReal,
                 Dados = dados
             };
         }
@@ -471,7 +472,7 @@ namespace AiLlama32.Aplicacao.Servico
             {
                 Sucesso = false,
                 Mensagem = mensagem,
-                UsouOllamaReal = usouOllamaReal ?? opcoesOllama.Value.UsarOllamaReal
+                UsouOllamaReal = usouOllamaReal ?? configuracaoOllamaDto.UsarOllamaReal
             };
         }
 
