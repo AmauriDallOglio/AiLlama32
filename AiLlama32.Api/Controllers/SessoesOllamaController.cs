@@ -90,7 +90,7 @@ namespace AiLlama32.Api.Controllers
         }
 
         [HttpPost("AssuntoGeral")]
-        public async Task<IActionResult> AssuntoGeral([FromBody] AssuntoGeralRequest request, [FromServices] AssuntoGeralHandler rotaHandler, CancellationToken cancelamento)
+        public async Task<IActionResult> AssuntoGeral([FromQuery] AssuntoGeralRequest request, [FromServices] AssuntoGeralHandler rotaHandler, CancellationToken cancelamento)
         {
             var resultado = await rotaHandler.Executar(request, cancelamento);
             return StatusCode(resultado.StatusCodigo ?? StatusCodes.Status200OK, resultado);

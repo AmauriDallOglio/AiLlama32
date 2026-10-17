@@ -1,0 +1,40 @@
+[
+  {
+    "id": "11111111-1111-1111-1111-111111111111",
+    "nome": "Assistente de documentacao",
+    "descricao": "Sessao para recuperar informacoes de documentacao interna.",
+    "modelo": "llama3.2:latest",
+    "instrucaoSistema": "Responda em portugues, com objetividade, usando o contexto da sessao.",
+    "temperatura": 0.7,
+    "tags": [
+      "documentacao",
+      "suporte"
+    ],
+    "historico": [
+      {
+        "papel": "sistema",
+        "conteudo": "Sessao inicial preparada para documentacao.",
+        "criadoEm": "2026-10-17T19:59:09.6488489+00:00"
+      }
+    ],
+    "ativo": true,
+    "criadoEm": "2026-10-17T19:59:09.6478344+00:00",
+    "atualizadoEm": "2026-10-17T17:17:38.8473886-03:00"
+  },
+  {
+    "id": "22222222-2222-2222-2222-222222222222",
+    "nome": "Assistente tecnico",
+    "descricao": "Sessao para perguntas tecnicas sobre APIs.",
+    "modelo": "llama3.2:latest",
+    "instrucaoSistema": "Responda em portugues, com objetividade, usando o contexto da sessao.",
+    "temperatura": 0.7,
+    "tags": [
+      "api",
+      "tecnico"
+    ],
+    "historico": [],
+    "ativo": true,
+    "criadoEm": "2026-10-17T19:59:09.6493156+00:00",
+    "atualizadoEm": "2026-10-17T19:59:09.6493158+00:00"
+  }
+]

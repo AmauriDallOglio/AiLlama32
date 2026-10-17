@@ -11,6 +11,7 @@ using AiLlama32.Aplicacao.Rotas.ObterHistorico;
 using AiLlama32.Aplicacao.Rotas.ObterStatusIntegracao;
 using AiLlama32.Aplicacao.Rotas.PerguntarSessao;
 using AiLlama32.Aplicacao.Rotas.Pesquisar;
+using AiLlama32.Aplicacao.Servico;
 using Microsoft.AspNetCore.Mvc;
 
 namespace AiLlama32.Api.Configuracao
@@ -25,10 +26,7 @@ namespace AiLlama32.Api.Configuracao
             {
                 options.SuppressModelStateInvalidFilter = true;
             });
-
-            builder.Services.AddControllers();
-            builder.Services.AddEndpointsApiExplorer();
-            builder.Services.ConfiguracaoSwagger();
+ 
 
             builder.Services.AddScoped<ListarHandler>();
             builder.Services.AddScoped<ObterHandler>();
@@ -43,6 +41,9 @@ namespace AiLlama32.Api.Configuracao
             builder.Services.AddScoped<ObterStatusIntegracaoHandler>();
             builder.Services.AddScoped<ObterConfiguracaoOllamaHandler>();
             builder.Services.AddScoped<PerguntarSessaoHandler>();
+
+            builder.Services.AddScoped<SessaoOllamaServico>();
+
         }
     }
 }
