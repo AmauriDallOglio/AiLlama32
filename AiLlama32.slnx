@@ -1,0 +1,6 @@
+<Solution>
+  <Folder Name="/Nucleo/">
+    <Project Path="AiLlama32.Aplicacao/AiLlama32.Aplicacao.csproj" />
+  </Folder>
+  <Project Path="AiLlama32.Api/AiLlama32.Api.csproj" />
+</Solution>
