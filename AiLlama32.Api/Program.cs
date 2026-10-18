@@ -29,12 +29,17 @@ app.Use(async (context, next) =>
     await next();
 });
  
-app.UseCors("AllowAll");
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+app.ConfigurarMiddlewaresApi();
+
+app.UseCors("AllowAll");
+app.AtivarAppSettinngsConfiguracao();
 
 app.UseHttpsRedirection();
 
