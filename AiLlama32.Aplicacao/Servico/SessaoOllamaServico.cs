@@ -107,8 +107,8 @@ namespace AiLlama32.Aplicacao.Servico
                 }
                 ],
                 Ativo = true,
-                CriadoEm = DateTimeOffset.UtcNow,
-                AtualizadoEm = DateTimeOffset.UtcNow
+                CriadoEm = DateTimeOffset.Now,
+                AtualizadoEm = DateTimeOffset.Now
             };
 
             sessoes.Add(sessao);
@@ -144,7 +144,7 @@ namespace AiLlama32.Aplicacao.Servico
             sessao.Temperatura = requisicao.Temperatura;
             sessao.Tags = requisicao.Tags;
             sessao.Ativo = requisicao.Ativo;
-            sessao.AtualizadoEm = DateTimeOffset.UtcNow;
+            sessao.AtualizadoEm = DateTimeOffset.Now;
 
             SalvarSessoes();
             return CriarSucesso(Clonar(sessao), "Sessao personalizada alterada.");
@@ -243,7 +243,7 @@ namespace AiLlama32.Aplicacao.Servico
                 });
             }
 
-            sessao.AtualizadoEm = DateTimeOffset.UtcNow;
+            sessao.AtualizadoEm = DateTimeOffset.Now;
             SalvarSessoes();
 
             return CriarSucesso<object>(new
@@ -296,7 +296,7 @@ namespace AiLlama32.Aplicacao.Servico
             }
 
             sessao.Historico.Clear();
-            sessao.AtualizadoEm = DateTimeOffset.UtcNow;
+            sessao.AtualizadoEm = DateTimeOffset.Now;
             SalvarSessoes();
 
             return CriarSucesso<object>(new
