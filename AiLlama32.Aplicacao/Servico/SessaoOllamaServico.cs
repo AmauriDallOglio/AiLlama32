@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Options;
 using OllamaSharp;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 
@@ -15,14 +16,16 @@ namespace AiLlama32.Aplicacao.Servico
         private readonly IOptions<AppSettingsDto> opcoesOllama;
         private readonly List<SessaoOllamaDto> sessoes;
         private readonly string caminhoArquivoSessoes;
+        private readonly ModelosSessaoOllamaServico modelosServico;
         private readonly JsonSerializerOptions opcoesJson = new(JsonSerializerDefaults.Web)
         {
             WriteIndented = true
         };
         ConfiguracaoOllamaDto configuracaoOllamaDto = new ConfiguracaoOllamaDto();
 
-        public SessaoOllamaServico(  IOptions<AppSettingsDto> opcoesOllama,  IWebHostEnvironment ambiente)
+        public SessaoOllamaServico(IOptions<AppSettingsDto> opcoesOllama, IWebHostEnvironment ambiente, ModelosSessaoOllamaServico modelosServico)
         {
+            this.modelosServico = modelosServico;
             this.opcoesOllama = opcoesOllama;
             caminhoArquivoSessoes = ResolverCaminhoArquivoSessoes(ambiente.ContentRootPath);
             sessoes = CarregarSessoes();
@@ -32,7 +35,7 @@ namespace AiLlama32.Aplicacao.Servico
 
         private List<SessaoOllamaDto> CriarSessoesIniciais()
         {
- 
+
             var modeloPadrao = ObterModeloPadrao();
 
             return
@@ -352,6 +355,104 @@ namespace AiLlama32.Aplicacao.Servico
                 TotalSessoes = sessoes.Count,
                 PacotePreparado = configuracao.PacoteIntegracao
             }, "Status da integracao Ollama obtido.");
+        }
+
+        public async Task<ResultadoOllamaDto<object>> AlterarAssuntoAmauri(string assunto, CancellationToken cancelamento = default)
+        {
+            if (string.IsNullOrWhiteSpace(assunto))
+                return CriarFalha<object>("O novo assunto e obrigatorio.");
+
+            const string modelo = "sessao_amauri";
+            var instrucaoSistema = "Voce e Arq. Atlas. Responda em portugues do Brasil, de forma clara e objetiva. "
+                + "Use o seguinte assunto e contexto nas proximas respostas:\n" + assunto.Trim();
+
+            try
+            {
+                using var cliente = new HttpClient
+                {
+                    BaseAddress = new Uri(configuracaoOllamaDto.UrlServidor.TrimEnd('/') + "/"),
+                    Timeout = TimeSpan.FromMinutes(5)
+                };
+                // Reutiliza os pesos do modelo existente e substitui seu contexto persistido.
+                // Substitui exemplos antigos pelo novo contexto (lista vazia herda os antigos no Ollama).
+                using var resposta = await cliente.PostAsJsonAsync("api/create", new
+                {
+                    model = modelo,
+                    from = modelo,
+                    system = instrucaoSistema,
+                    messages = new[] { new { role = "user", content = assunto.Trim() } },
+                    stream = false
+                }, cancelamento);
+
+                if (!resposta.IsSuccessStatusCode)
+                    return CriarFalha<object>(
+                        $"Nao foi possivel alterar sessao_amauri no Ollama (HTTP {(int)resposta.StatusCode}). Verifique se o modelo existe no servidor configurado.",
+                        usouOllamaReal: true);
+
+                using var conteudo = await JsonDocument.ParseAsync(await resposta.Content.ReadAsStreamAsync(cancelamento), cancellationToken: cancelamento);
+                if (conteudo.RootElement.ValueKind != JsonValueKind.Object
+                    || !conteudo.RootElement.TryGetProperty("status", out var status)
+                    || status.ValueKind != JsonValueKind.String || status.GetString() != "success")
+                    return CriarFalha<object>("O Ollama nao confirmou a alteracao de sessao_amauri.", usouOllamaReal: true);
+
+                string texto;
+                try
+                {
+                    texto = await modelosServico.GerarResposta(modelo, assunto.Trim(), cancelamento);
+                }
+                catch (Exception excecao) when ((excecao is HttpRequestException or OperationCanceledException or JsonException) && !cancelamento.IsCancellationRequested)
+                {
+                    var falha = CriarFalha<object>("Assunto atualizado no Ollama, mas nao foi possivel gerar a resposta. Consulte a sessao ou use a rota de perguntas.", usouOllamaReal: true);
+                    falha.Dados = new { Modelo = modelo, Assunto = assunto.Trim(), AssuntoAtualizado = true, Resposta = (string?)null };
+                    return falha;
+                }
+
+                return CriarSucesso<object>(new
+                {
+                    Modelo = modelo,
+                    Assunto = assunto.Trim(),
+                    InstrucaoSistema = instrucaoSistema,
+                    AssuntoAtualizado = true,
+                    Resposta = texto
+                }, "Assunto de sessao_amauri atualizado e respondido pelo Ollama.", usouOllamaReal: true);
+            }
+            catch (OperationCanceledException) when (cancelamento.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception excecao) when (excecao is HttpRequestException or OperationCanceledException or JsonException)
+            {
+                return CriarFalha<object>("Nao foi possivel concluir a alteracao de sessao_amauri. Verifique a conexao com o Ollama e consulte o modelo antes de tentar novamente.",
+                    usouOllamaReal: true);
+            }
+        }
+
+        public async Task<ResultadoOllamaDto<object>> PerguntarAmauri(string pergunta, CancellationToken cancelamento = default)
+        {
+            const string modelo = "sessao_amauri";
+            try
+            {
+                var resposta = await modelosServico.ResponderComContexto(modelo, pergunta, cancelamento);
+
+                return CriarSucesso<object>(new
+                {
+                    Modelo = modelo,
+                    Pergunta = pergunta,
+                    resposta.Resposta,
+                    resposta.EncontrouNoContexto,
+                    resposta.Fontes
+                }, resposta.EncontrouNoContexto ? "Resposta extraida do contexto de sessao_amauri." : "Informacao ausente no contexto de sessao_amauri.", usouOllamaReal: true);
+            }
+            catch (OperationCanceledException) when (cancelamento.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                return CriarFalha<object>(
+                    "Nao foi possivel consultar sessao_amauri. Verifique se o Ollama esta ativo em UrlServidor e se o modelo sessao_amauri esta instalado nesse servidor.",
+                    usouOllamaReal: true);
+            }
         }
 
         private async Task<string> PerguntarOllamaReal(SessaoOllamaDto sessao, string pergunta)

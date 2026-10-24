@@ -41,6 +41,7 @@
         public string TipoConsultaAssuntoGeral { get; set; } = string.Empty;
         public string PacoteIntegracao { get; set; } = string.Empty;
         public string CaminhoArquivoSessoes { get; set; } = string.Empty;
+        public string CaminhoArquivoConhecimento { get; set; } = "Dados/sessoes-conhecimento.json";
         public string Observacao { get; set; } = string.Empty;
     }
 
